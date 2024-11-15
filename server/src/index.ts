@@ -1,5 +1,5 @@
 import express from 'express';
-
+import cookieParser from 'cookie-parser';
 import cors from 'cors'
 import dotenv from 'dotenv';
 
@@ -17,13 +17,14 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
-import router from './routes/userRoutes';
-app.use('/', router)
-
+import userRoute from './routes/userRoutes';
+import adminRoute from './routes/adminRoutes'
+app.use('/', userRoute)
+app.use('/admin/', adminRoute)
 
 const port = process.env.PORT || 5000
-
 
 
 app.listen(port, () => {

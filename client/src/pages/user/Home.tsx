@@ -5,7 +5,7 @@ import Navbar from '../../components/user/Navbar';
 
 
 const Home = () => {
-  const name = useSelector((state: RootState) => state.auth.profile.name ? state.auth.profile.name : 'User')
+  const name = useSelector((state: RootState) => state.auth.user?.name ? state.auth.user.name : 'User')
 
   return (
     <div className="min-h-screen">

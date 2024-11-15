@@ -1,45 +1,44 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UserActionPayload, AuthState } from "../../types/authTypes";
+import { User, AuthState } from "../../types/authTypes";
 
 const initialState: AuthState = {
     isAuthenticated: false,
-    user: {
-        email: null,
-        accessToken: null,
-    },
-    profile: {
-        name: null,
-        email : null,
-        phone: null,
-        image: null,
-        isBlocked: false
-    },
+    user: null
 };
+
+interface SignInPayload {
+    user: User;
+    isAuthenticated: boolean
+}
+
+
 
 const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
-        // Reducer to handle signing in and setting basic user data
-        signIn: (state, action: PayloadAction<UserActionPayload>) => {
+        signIn: (state, action: PayloadAction<SignInPayload>) => {
             state.isAuthenticated = true;
-            state.user = action.payload;
+            state.user = action.payload.user;
         },
-
 
         signOut: (state) => {
             state.isAuthenticated = false;
-            state.user = { email: null, accessToken: null };
-            state.profile = { name: null, email: null, phone: null,  image: null, isBlocked: false };
+            state.user = null;
         },
 
-        updateProfile: (state, action) => {
-            state.profile = { ...state.profile, ...action.payload };
+        setUser: (state, action: PayloadAction<User>) => {
+            state.user = {
+                ...state.user,
+                ...action.payload
+            };
+        },
+
+        setAuthState:  (state) => {
+            state.isAuthenticated = true;
         },
     },
 });
 
-
-export const { signIn, signOut, updateProfile } = authSlice.actions;
-
+export const { signIn, signOut, setUser, setAuthState } = authSlice.actions;
 export default authSlice.reducer;

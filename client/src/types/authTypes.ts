@@ -1,21 +1,13 @@
-  
-export interface UserActionPayload {
-    email: string | null;
-    accessToken: string | null;
-}
-  
-
 export interface User {
+    id: string;
     name: string | null;
     email: string | null;
     phone: string | null;
-    imageURL: string | null;
+    imageurl: string | null;
     isBlocked: boolean;
 }
 
 export interface AuthState {
     isAuthenticated: boolean;
-    user: UserActionPayload;
-    profile: User;
+    user: User | null;
 }
-  

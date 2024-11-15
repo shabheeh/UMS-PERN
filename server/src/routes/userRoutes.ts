@@ -1,7 +1,7 @@
 import express from 'express'
-import { signin, signup } from '../controllers/user/userController'
-import { refreshAccessToken, authenticate } from '../middlewares/authToken'
-import { sign } from 'jsonwebtoken'
+import { signin, signup, updateProfile } from '../controllers/user/userController'
+import { refreshAccessToken, checkTokenValidity, protectRoute } from '../middlewares/authToken'
+
 
 const router = express.Router()
 
@@ -10,9 +10,9 @@ router.post('/signin', signin)
 
 router.post('/signup', signup)
 
-router.get('/refresh-token', refreshAccessToken)
-router.post('/authenticate', authenticate)
+router.post('/refresh-token', refreshAccessToken)
+router.get('/authenticate', checkTokenValidity)
 
-router.post('/profile', authenticate )
+router.put('/profile', protectRoute, updateProfile )
 
 export default router;

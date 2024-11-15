@@ -1,42 +1,67 @@
 import axios from 'axios';
 import { signOut } from '../redux/features/authSlice.js';
-import { store } from '../redux/app/store'; 
-import Cookies from 'js-cookie';
+import { store } from '../redux/app/store';
+
+// In-memory token storage
+let accessToken: string | null = null;
 
 // Create axios instance
 const instance = axios.create({
   baseURL: 'http://localhost:5000',
-  withCredentials: true, 
+  withCredentials: true, // Keep this for refresh token cookie
 });
 
-// Interceptor to handle expired access tokens
+// Function to set access token (call this after login)
+export const setAccessToken = (token: string) => {
+  accessToken = token;
+  localStorage.setItem('accessToken', token); // Save token to localStorage
+  instance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+};
+
+// Function to clear access token (call this during logout)
+export const clearAccessToken = () => {
+  accessToken = null;
+  localStorage.removeItem('accessToken'); // Remove token from localStorage
+  delete instance.defaults.headers.common['Authorization'];
+};
+
+// Request interceptor to add token to all requests
+instance.interceptors.request.use(
+  (config) => {
+    accessToken = localStorage.getItem('accessToken')
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle token refresh
 instance.interceptors.response.use(
-  (response) => response, // Success handler
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    // Check if the error is due to an expired access token
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         // Attempt to refresh the token
-        const refreshResponse = await instance.post(
-          '/refresh-token', 
-          {}, 
-          { withCredentials: true } // Ensures cookies are sent with the request
-        );
-
-        // Update access token
+        const refreshResponse = await instance.post('/refresh-token');
+        
+        // Store new access token in memory
         const newAccessToken = refreshResponse.data.accessToken;
-        Cookies.set('accessToken', newAccessToken, { expires: 7, secure: true, sameSite: 'None' });
-        instance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
-        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        setAccessToken(newAccessToken);
 
-        return instance(originalRequest); // Retry the original request
+        // Retry the original request with new token
+        return instance(originalRequest);
       } catch (refreshError) {
-
-        store.dispatch(signOut()); 
+        // Clear token and trigger logout
+        clearAccessToken();
+        store.dispatch(signOut());
         return Promise.reject(refreshError);
       }
     }

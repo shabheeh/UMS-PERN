@@ -6,9 +6,10 @@ import { AxiosError } from 'axios';
 import { Toaster, toast } from 'react-hot-toast';
 import { validateMail } from '../../utils/inputValidations';
 import { login } from '../../utils/authServices';
+import axios from '../../utils/axiosInterceptor'
 
 
-const SignIn: React.FC = () => {
+const Login: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,9 +44,20 @@ const SignIn: React.FC = () => {
 
     try {
       setLoading(true)
-      await login(credentials);
-      // Redirect to dashboard or protected route
-      navigate('/');
+      const response = await axios.post('/admin/signin', credentials)
+        if(response.data.success) {
+            navigate('/admin/dashboard');
+        }else {
+            toast(response.data.message, {
+                icon: '⚠',
+                style: {
+                  borderRadius: '10px',
+                  background: '#333',
+                  color: '#fff',
+                },
+              });
+        }
+      
 
     } catch (error: unknown) {
       setLoading(false);
@@ -138,16 +150,6 @@ const SignIn: React.FC = () => {
            
           </button>          
 
-            <div className="text-center text-gray-500">
-            Not registered?{' '}
-            <Link 
-                to={'/signup'} 
-                className="font-semibold text-gray-900 hover:underline cursor-pointer"
-            >
-                Sign Up
-            </Link>
-            </div> 
-
           
         </form>
       </div>
@@ -155,5 +157,5 @@ const SignIn: React.FC = () => {
   );
 };
 
-export default SignIn;
+export default Login;
 

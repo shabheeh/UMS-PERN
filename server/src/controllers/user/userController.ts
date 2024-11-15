@@ -96,3 +96,46 @@ export const signin = async (req: Request, res: Response): Promise<any> => {
     }
 };
 
+
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+    const { id, name, email, phone, imageurl } = req.body;
+    try {
+        const query = `
+            UPDATE users 
+            SET 
+                name = $1,
+                email = $2,
+                phone = $3,
+                imageurl = $4
+            WHERE id = $5
+            RETURNING *
+        `;
+        
+        const values = [
+            name,
+            email, 
+            phone,
+            imageurl,
+            id
+        ];
+
+        const result = await pool.query(query, values);
+        
+        if (result.rowCount === 0) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json({
+            message: 'Profile updated successfully',
+            user: result.rows[0]
+        });
+
+    } catch (error: any) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ 
+            message: 'Failed to update profile',
+            error: error.message 
+        });
+    }
+};

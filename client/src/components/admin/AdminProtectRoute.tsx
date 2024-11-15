@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const isAuthenticated = useSelector((state: RootState )=> state.auth.isAuthenticated);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -49,4 +49,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/signin" />;
 };
 
-export default ProtectedRoute;
+export default AdminProtectedRoute;

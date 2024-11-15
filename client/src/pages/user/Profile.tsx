@@ -1,32 +1,74 @@
-import React, { useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useRef, useState,  useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { User, Edit, Mail, Phone, Save, X } from 'lucide-react';
 import Navbar from "../../components/user/Navbar";
 import { RootState } from "../../redux/app/store";
 import axios from "../../utils/axiosInterceptor";
+import { setUser } from "../../redux/features/authSlice";
+import { Toaster, toast } from "react-hot-toast";
+import { validateName, validatePhoneNumber } from "../../utils/inputValidations";
 
 const Profile = () => {
-  const user = useSelector((state: RootState) => state.auth.profile);
+  const user = useSelector((state: RootState) => state.auth.user);
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(user || {
     name: "",
     email: "",
     phone: "",
-    imageURL: ""
+    imageurl: ""
   });
 
   const [editData, setEditData] = useState({ ...userData });
   const fileInputRef = useRef(null);
+  const dispatch = useDispatch();
 
   const handleSave = () => {
+    if (editData.name) {
+      if(!validateName(editData.name)) {
+        return toast.error('please provide valid name');
+      }
+    }else {
+      return toast.error('please provide name');
+    }
+
+    if (!editData.phone) {
+      return toast.error('please provide phone');
+    }
+
+    if (editData.imageurl) {
+      if(!validatePhoneNumber(editData.phone)) {
+        return toast.error('please provide valid phone')
+      }
+    }else {
+      return toast.error('please provide image');
+
+    }
+
     setUserData(editData);
     setIsEditing(false);
-    axios.put('/profile', userData)
-    // .then(res => {
-        // if(res.status === 200) {
-        //     const user = res.data.user
-        // }
-    // })
+
+    axios.put('/profile', editData)
+      .then((res) => {
+        if (res.status === 200) {
+          const { user } = res.data;
+
+          // Update the user in Redux
+          dispatch(setUser(user));
+
+          // Notify the user of success
+          toast.success('Profile updated successfully');
+        }
+      })
+      .catch((err) => {
+        console.error('Error editing profile:', err);
+
+        // Display error message
+        if (err.response?.data?.message) {
+          toast.error(err.response.data.message);
+        } else {
+          toast.error('An error occurred while editing the profile');
+        }
+      });
   };
 
   const handleCancel = () => {
@@ -34,7 +76,7 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  const handleProfileImageChange =  async(event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -42,7 +84,7 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', 'dih8zu3u');
-     
+
       const response = await fetch(`https://api.cloudinary.com/v1_1/dvhwjy5mn/image/upload`, {
         method: 'POST',
         body: formData,
@@ -53,25 +95,26 @@ const Profile = () => {
       }
 
       const data = await response.json();
-
-      
-      setEditData({ ...editData, imageURL: data.secure_url, });
-
-      
+      setEditData({ ...editData, imageurl: data.secure_url });
     } catch (error) {
       console.error('Upload error:', error);
-     
     }
   };
-
-  
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
 
+  // Update the user state when the userData state changes
+  useEffect(() => {
+    setUser(userData);
+  }, [userData, setUser]);
+
+
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <Toaster />
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-6">
@@ -109,10 +152,10 @@ const Profile = () => {
             {/* Profile Picture */}
             <div className="flex justify-center relative">
               <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-500 text-4xl font-bold">
-                {editData.profilePicture ? (
-                  <img src={editData.profilePicture} alt="Profile" className="object-cover h-full w-full" />
+                {editData.imageurl ? (
+                  <img src={editData.imageurl} alt="Profile" className="object-cover h-full w-full" />
                 ) : (
-                  <span>{editData.name ? editData.name.charAt(0) : "?"}</span>
+                  <span>{user?.name ? user.name.charAt(0) : "?"}</span>
                 )}
                 {isEditing && (
                   <button
@@ -146,14 +189,14 @@ const Profile = () => {
                     placeholder="Enter your name"
                   />
                 ) : (
-                  <span className="text-gray-700">{userData.name || "Name not provided"}</span>
+                  <span className="text-gray-700">{user?.name || "Name not provided"}</span>
                 )}
               </div>
 
               {/* Email */}
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-700">{userData.email}</span>
+                <span className="text-gray-700">{user?.email}</span>
               </div>
 
               {/* Phone */}
@@ -168,7 +211,7 @@ const Profile = () => {
                     placeholder="Enter your phone number"
                   />
                 ) : (
-                  <span className="text-gray-700">{userData.phone || "Phone not provided"}</span>
+                  <span className="text-gray-700">{user?.phone || "Phone not provided"}</span>
                 )}
               </div>
             </div>
